@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>IoT Producer–Consumer Simulator</title>
+<style>
+:root{--bg:#f6f7f9;--card:#fff;--text:#1c2430;--mut:#64707f;--line:#dde2e8;--acc:#2563eb;--ok:#16a34a;--warn:#d97706;--bad:#dc2626;--slot:#eef2f7;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#12161c;--card:#1b212a;--text:#e8edf3;--mut:#93a0b0;--line:#2c3541;--acc:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--slot:#242c37}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#12161c;--card:#1b212a;--text:#e8edf3;--mut:#93a0b0;--line:#2c3541;--acc:#60a5fa;--ok:#4ade80;--warn:#fbbf24;--bad:#f87171;--slot:#242c37}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:4px 0 2px}p.sub{margin:0 0 14px;color:var(--mut)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--text);padding:8px 14px;border-radius:8px;cursor:pointer}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+label{color:var(--mut);font-size:13px}
+.flow{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:12px;align-items:center}
+@media(max-width:640px){.flow{grid-template-columns:1fr}}
+.ent{display:flex;flex-direction:column;gap:8px}
+.node{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:var(--slot)}
+.node b{display:block;font-size:14px}.node span{font-size:12px;color:var(--mut)}
+.node.run{border-color:var(--ok)}.node.wait{border-color:var(--bad)}
+.node.run span{color:var(--ok)}.node.wait span{color:var(--bad)}
+.buf{display:flex;gap:6px;justify-content:center}
+.slot{flex:1;min-width:0;height:74px;border:2px dashed var(--line);border-radius:8px;background:var(--slot);display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;position:relative;text-align:center;padding:2px}
+.slot.f{border-style:solid;border-color:var(--acc)}
+.slot .n{font-weight:700;font-size:15px}
+.slot.in::after,.slot.out::after{position:absolute;top:-17px;font-size:11px;font-weight:700}
+.slot.in::after{content:"IN";color:var(--ok)}.slot.out::after{content:"OUT";color:var(--warn)}
+.slot.in.out::after{content:"IN/OUT"}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+@media(max-width:520px){.stats{grid-template-columns:repeat(2,1fr)}}
+.st{border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}
+.st small{display:block;color:var(--mut);font-size:11px}.st b{font-size:18px}
+#log{height:210px;overflow:auto;font:12.5px/1.5 ui-monospace,Menlo,Consolas,monospace;background:var(--slot);border-radius:8px;padding:8px}
+#log div.f{color:var(--bad)}#log div.e{color:var(--warn)}#log div.p{color:var(--ok)}
+#fifo.ok{color:var(--ok)}#fifo.bad{color:var(--bad)}
+</style>
+</head>
+<body>
+<main>
+<h1>IoT Sensor Data Processing – Producer–Consumer</h1>
+<p class="sub">3 sensors (producers) → bounded buffer (5 slots) → processing server (consumer). Synchronised with <b>mutex</b>, <b>empty</b> and <b>full</b> semaphores.</p>
+
+<div class="card row">
+ <button class="p" id="go">▶ Start</button>
+ <button id="step">Add reading</button>
+ <button id="reset">Reset</button>
+ <label>Sensor speed <input type="range" id="ps" min="1" max="10" value="6"></label>
+ <label>Server speed <input type="range" id="cs" min="1" max="10" value="3"></label>
+</div>
+
+<div class="card">
+ <div class="flow">
+  <div class="ent" id="prods"></div>
+  <div><div class="buf" id="buf"></div><div style="text-align:center;color:var(--mut);font-size:12px;margin-top:8px">circular FIFO buffer</div></div>
+  <div class="ent"><div class="node" id="cons"><b>Data Processing Server</b><span>idle</span></div></div>
+ </div>
+ <div class="stats">
+  <div class="st"><small>empty (free slots)</small><b id="se">5</b></div>
+  <div class="st"><small>full (filled slots)</small><b id="sf">0</b></div>
+  <div class="st"><small>mutex</small><b id="sm">free</b></div>
+  <div class="st"><small>processed / FIFO</small><b><span id="sp">0</span> · <span id="fifo" class="ok">OK</span></b></div>
+ </div>
+</div>
+
+<div class="card"><div id="log"></div></div>
+</main>
+
+<script>
+const N=5, SENS=[{n:"Temperature",u:"°C",b:20,r:15},{n:"Humidity",u:"%",b:40,r:40},{n:"Air Quality",u:"AQI",b:30,r:120}];
+let buf,inI,outI,empty,full,seq,done,last,fifoOk,timer,running,pNext,cNext,pState,cState,mutexBusy;
+const $=id=>document.getElementById(id);
+function log(t,c){const d=document.createElement("div");d.className=c||"";d.textContent=t;const l=$("log");l.appendChild(d);l.scrollTop=l.scrollHeight;while(l.children.length>200)l.removeChild(l.firstChild)}
+
+function build(){
+  $("prods").innerHTML=SENS.map((s,i)=>`<div class="node" id="p${i}"><b>Sensor ${i+1}: ${s.n}</b><span>idle</span></div>`).join("");
+  $("buf").innerHTML=Array.from({length:N},(_,i)=>`<div class="slot" id="s${i}"></div>`).join("");
+}
+function reset(){
+  clearInterval(timer);running=false;$("go").textContent="▶ Start";
+  buf=Array(N).fill(null);inI=outI=0;empty=N;full=0;seq=1;done=0;last=0;fifoOk=true;
+  pNext=SENS.map(()=>0);cNext=0;pState=SENS.map(()=>"idle");cState="idle";mutexBusy=false;
+  $("log").innerHTML="";log("System reset. empty=5, full=0, mutex=free");render();
+}
+function status(el,cls,txt){el.className="node "+cls;el.lastChild.textContent=txt}
+function render(){
+  for(let i=0;i<N;i++){const s=$("s"+i),d=buf[i];
+    s.className="slot"+(d?" f":"")+(i===inI?" in":"")+(i===outI?" out":"");
+    s.innerHTML=d?`<span class="n">#${d.seq}</span><span>${d.t}</span><span>${d.v} ${d.u}</span>`:"empty"}
+  $("se").textContent=empty;$("sf").textContent=full;$("sm").textContent=mutexBusy?"locked":"free";
+  $("sp").textContent=done;const f=$("fifo");f.textContent=fifoOk?"OK":"VIOLATED";f.className=fifoOk?"ok":"bad";
+  SENS.forEach((s,i)=>{const e=$("p"+i);
+    if(pState[i]==="wait")status(e,"wait","⏸ buffer FULL – waiting");
+    else if(pState[i]==="run")status(e,"run","✔ inserted reading");
+    else status(e,"","sensing…")});
+  if(cState==="wait")status($("cons"),"wait","⏸ buffer EMPTY – waiting");
+  else if(cState==="run")status($("cons"),"run","✔ processing data");
+  else status($("cons"),"","idle");
+}
+function produce(i){
+  const s=SENS[i];
+  if(empty===0){ if(pState[i]!=="wait")log(`Sensor ${i+1} (${s.n}): buffer FULL → waits on empty`,"f"); pState[i]="wait"; return false}
+  empty--;                                   // wait(empty)
+  mutexBusy=true;                            // wait(mutex)
+  const d={seq:seq++,t:s.n,u:s.u,v:(s.b+Math.random()*s.r).toFixed(1)};
+  buf[inI]=d;log(`Sensor ${i+1} produced #${d.seq}: ${d.t} = ${d.v} ${d.u} → slot ${inI}`,"p");
+  inI=(inI+1)%N;
+  mutexBusy=false;                           // signal(mutex)
+  full++;                                    // signal(full)
+  pState[i]="run";return true;
+}
+function consume(){
+  if(full===0){ if(cState!=="wait")log("Server: buffer EMPTY → waits on full","e"); cState="wait"; return false}
+  full--;mutexBusy=true;
+  const d=buf[outI];buf[outI]=null;
+  log(`Server consumed #${d.seq}: ${d.t} = ${d.v} ${d.u} ← slot ${outI}`);
+  outI=(outI+1)%N;mutexBusy=false;empty++;
+  if(d.seq!==last+1)fifoOk=false;last=d.seq;done++;cState="run";return true;
+}
+function tick(){
+  const now=Date.now(),pi=2200-$("ps").value*200,ci=2200-$("cs").value*200;
+  SENS.forEach((s,i)=>{ if(now>=pNext[i]){ if(produce(i)) pNext[i]=now+pi*(0.6+Math.random()*0.8); } });
+  if(now>=cNext){ if(consume()) cNext=now+ci; }
+  render();
+}
+$("go").onclick=()=>{
+  running=!running;$("go").textContent=running?"⏸ Pause":"▶ Start";
+  if(running)timer=setInterval(tick,150);else clearInterval(timer);
+};
+$("step").onclick=()=>{produce(Math.floor(Math.random()*3));render()};
+$("reset").onclick=reset;
+build();reset();
+</script>
+</body>
+</html>

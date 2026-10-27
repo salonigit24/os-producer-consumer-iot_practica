@@ -1,0 +1,73 @@
+IoT Sensor Data Processing System (buffer size = 5)
+
+[Server              ] BUFFER EMPTY -> waiting...
+[Sensor 2 | Humidity   ] PRODUCED #01 value= 58.92 %     (buffer: 1/5)
+[Sensor 1 | Temperature] PRODUCED #02 value= 24.14 C     (buffer: 2/5)
+[Server              ] CONSUMED #01 from Sensor 2 (Humidity) (buffer: 1/5)
+[Sensor 3 | Air Quality] PRODUCED #03 value=116.28 AQI   (buffer: 2/5)
+[Sensor 2 | Humidity   ] PRODUCED #04 value= 49.12 %     (buffer: 3/5)
+[Sensor 1 | Temperature] PRODUCED #05 value= 21.50 C     (buffer: 4/5)
+[Sensor 1 | Temperature] PRODUCED #06 value= 22.04 C     (buffer: 5/5)
+[Sensor 3 | Air Quality] BUFFER FULL  -> waiting...
+[Sensor 2 | Humidity   ] BUFFER FULL  -> waiting...
+[Sensor 1 | Temperature] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #01: Humidity = 58.92 %
+[Server              ] CONSUMED #02 from Sensor 1 (Temperature) (buffer: 4/5)
+[Sensor 3 | Air Quality] PRODUCED #07 value=123.48 AQI   (buffer: 5/5)
+[Sensor 3 | Air Quality] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #02: Temperature = 24.14 C
+[Server              ] CONSUMED #03 from Sensor 3 (Air Quality) (buffer: 4/5)
+[Sensor 2 | Humidity   ] PRODUCED #08 value= 66.56 %     (buffer: 5/5)
+[Sensor 2 | Humidity   ] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #03: Air Quality = 116.28 AQI
+[Server              ] CONSUMED #04 from Sensor 2 (Humidity) (buffer: 4/5)
+[Sensor 1 | Temperature] PRODUCED #09 value= 21.71 C     (buffer: 5/5)
+[Sensor 1 | Temperature] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #04: Humidity = 49.12 %
+[Server              ] CONSUMED #05 from Sensor 1 (Temperature) (buffer: 4/5)
+[Sensor 3 | Air Quality] PRODUCED #10 value= 95.16 AQI   (buffer: 5/5)
+[Sensor 3 | Air Quality] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #05: Temperature = 21.50 C
+[Server              ] CONSUMED #06 from Sensor 1 (Temperature) (buffer: 4/5)
+[Sensor 2 | Humidity   ] PRODUCED #11 value= 56.88 %     (buffer: 5/5)
+[Sensor 2 | Humidity   ] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #06: Temperature = 22.04 C
+[Server              ] CONSUMED #07 from Sensor 3 (Air Quality) (buffer: 4/5)
+[Sensor 1 | Temperature] PRODUCED #12 value= 33.08 C     (buffer: 5/5)
+[Sensor 1 | Temperature] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #07: Air Quality = 123.48 AQI
+[Server              ] CONSUMED #08 from Sensor 2 (Humidity) (buffer: 4/5)
+[Sensor 3 | Air Quality] PRODUCED #13 value=111.84 AQI   (buffer: 5/5)
+[Sensor 3 | Air Quality] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #08: Humidity = 66.56 %
+[Server              ] CONSUMED #09 from Sensor 1 (Temperature) (buffer: 4/5)
+[Sensor 2 | Humidity   ] PRODUCED #14 value= 55.48 %     (buffer: 5/5)
+[Sensor 2 | Humidity   ] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #09: Temperature = 21.71 C
+[Server              ] CONSUMED #10 from Sensor 3 (Air Quality) (buffer: 4/5)
+[Sensor 1 | Temperature] PRODUCED #15 value= 27.57 C     (buffer: 5/5)
+[Server              ] PROCESSED #10: Air Quality = 95.16 AQI
+[Server              ] CONSUMED #11 from Sensor 2 (Humidity) (buffer: 4/5)
+[Sensor 3 | Air Quality] PRODUCED #16 value= 98.88 AQI   (buffer: 5/5)
+[Sensor 3 | Air Quality] BUFFER FULL  -> waiting...
+[Server              ] PROCESSED #11: Humidity = 56.88 %
+[Server              ] CONSUMED #12 from Sensor 1 (Temperature) (buffer: 4/5)
+[Sensor 2 | Humidity   ] PRODUCED #17 value= 56.04 %     (buffer: 5/5)
+[Server              ] PROCESSED #12: Temperature = 33.08 C
+[Server              ] CONSUMED #13 from Sensor 3 (Air Quality) (buffer: 4/5)
+[Sensor 3 | Air Quality] PRODUCED #18 value=149.04 AQI   (buffer: 5/5)
+[Server              ] PROCESSED #13: Air Quality = 111.84 AQI
+[Server              ] CONSUMED #14 from Sensor 2 (Humidity) (buffer: 4/5)
+[Server              ] PROCESSED #14: Humidity = 55.48 %
+[Server              ] CONSUMED #15 from Sensor 1 (Temperature) (buffer: 3/5)
+[Server              ] PROCESSED #15: Temperature = 27.57 C
+[Server              ] CONSUMED #16 from Sensor 3 (Air Quality) (buffer: 2/5)
+[Server              ] PROCESSED #16: Air Quality = 98.88 AQI
+[Server              ] CONSUMED #17 from Sensor 2 (Humidity) (buffer: 1/5)
+[Server              ] PROCESSED #17: Humidity = 56.04 %
+[Server              ] CONSUMED #18 from Sensor 3 (Air Quality) (buffer: 0/5)
+[Server              ] PROCESSED #18: Air Quality = 149.04 AQI
+
+=== Summary ===
+Items processed : 18
+FIFO order      : MAINTAINED
